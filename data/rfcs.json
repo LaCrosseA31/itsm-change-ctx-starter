@@ -1,0 +1,34 @@
+{
+  "rfcs": [
+    {
+      "id": "RFC-9812",
+      "title": "Certificate rotation for internal-dashboard",
+      "description": "Routine TLS cert rotation for internal-dashboard. Expiring in 14 days. Using the standard cert rotation pipeline.",
+      "submitter": "alice.engineer",
+      "submitted_at": "2026-04-21T09:00:00Z",
+      "affected_cis": ["ci-dashboard-tls"],
+      "change_type": null,
+      "proposed_template_id": "TPL-CERT-ROTATE-STD"
+    },
+    {
+      "id": "RFC-9847",
+      "title": "Certificate rotation for payment-api",
+      "description": "TLS cert rotation for payment-api. Expiring in 7 days. Standard pipeline.",
+      "submitter": "bob.engineer",
+      "submitted_at": "2026-04-21T10:30:00Z",
+      "affected_cis": ["ci-payment-tls"],
+      "change_type": null,
+      "proposed_template_id": "TPL-CERT-ROTATE-STD"
+    },
+    {
+      "id": "RFC-9903",
+      "title": "Certificate rotation for fraud-check",
+      "description": "TLS cert rotation for fraud-check service.",
+      "submitter": "carol.engineer",
+      "submitted_at": "2026-04-21T11:00:00Z",
+      "affected_cis": ["ci-fraud-tls"],
+      "change_type": null,
+      "proposed_template_id": "TPL-CERT-ROTATE-STD"
+    }
+  ]
+}
