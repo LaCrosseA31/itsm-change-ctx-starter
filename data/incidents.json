@@ -1,0 +1,70 @@
+{
+  "incidents": [
+    {
+      "id": "INC-5010",
+      "title": "payment-api returning 500 errors",
+      "description": "Payment API is returning HTTP 500 errors. Multiple customers reporting failed transactions. Monitoring shows error rate spiked from 0.1% to 34% at 08:42 UTC.",
+      "reporter": "alice.oncall",
+      "reported_at": "2026-04-21T08:45:00Z",
+      "affected_cis": ["ci-payment-lb-01"],
+      "symptom_category": "outage",
+      "affected_user_count": 12000,
+      "severity_hint": "critical"
+    },
+    {
+      "id": "INC-5023",
+      "title": "internal-dashboard disk usage at 92%",
+      "description": "Disk usage on internal-dashboard app server reached 92%. Threshold alert fired. Service still operational but approaching capacity.",
+      "reporter": "bob.monitoring",
+      "reported_at": "2026-04-21T09:15:00Z",
+      "affected_cis": ["ci-dashboard-tls"],
+      "symptom_category": "threshold_warning",
+      "affected_user_count": 45,
+      "severity_hint": "low"
+    },
+    {
+      "id": "INC-5031",
+      "title": "notification-service delivery delays",
+      "description": "Email and SMS notifications are delayed by 15-30 minutes. Queue depth increasing. Started approximately 08:50 UTC.",
+      "reporter": "carol.oncall",
+      "reported_at": "2026-04-21T09:00:00Z",
+      "affected_cis": ["ci-notification-db"],
+      "symptom_category": "degradation",
+      "affected_user_count": 3500,
+      "severity_hint": "medium"
+    },
+    {
+      "id": "INC-5044",
+      "title": "fraud-check latency spike",
+      "description": "Fraud check API response times spiked to 8 seconds (normally 200ms). Affecting transaction approval pipeline.",
+      "reporter": "dave.engineer",
+      "reported_at": "2026-04-21T10:00:00Z",
+      "affected_cis": ["ci-fraud-tls"],
+      "symptom_category": "degradation",
+      "affected_user_count": 5000,
+      "severity_hint": "high"
+    },
+    {
+      "id": "INC-5052",
+      "title": "marketing-site 404 errors on /pricing",
+      "description": "The /pricing page on the marketing site is returning 404. Likely a deployment issue. No customer-facing transactions affected.",
+      "reporter": "eve.marketing",
+      "reported_at": "2026-04-21T11:30:00Z",
+      "affected_cis": ["ci-marketing-tls"],
+      "symptom_category": "threshold_warning",
+      "affected_user_count": 80,
+      "severity_hint": "low"
+    },
+    {
+      "id": "INC-5060",
+      "title": "payment-api degraded response times",
+      "description": "Payment API response times elevated to 3-5 seconds (normally 150ms). Not a full outage but significantly impacting checkout flow. Existing INC-5010 was opened 2 hours ago for the same service.",
+      "reporter": "alice.oncall",
+      "reported_at": "2026-04-21T10:45:00Z",
+      "affected_cis": ["ci-payment-tls"],
+      "symptom_category": "degradation",
+      "affected_user_count": 8000,
+      "severity_hint": "high"
+    }
+  ]
+}

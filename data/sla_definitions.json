@@ -1,0 +1,24 @@
+{
+  "sla_targets": {
+    "P1": {
+      "response_minutes": 15,
+      "resolution_minutes": 60,
+      "description": "Critical — full outage or major revenue impact"
+    },
+    "P2": {
+      "response_minutes": 30,
+      "resolution_minutes": 240,
+      "description": "High — significant degradation or regulatory risk"
+    },
+    "P3": {
+      "response_minutes": 120,
+      "resolution_minutes": 1440,
+      "description": "Medium — limited impact, workaround available"
+    },
+    "P4": {
+      "response_minutes": 480,
+      "resolution_minutes": 4320,
+      "description": "Low — cosmetic or non-urgent issue"
+    }
+  }
+}

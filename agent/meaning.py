@@ -19,9 +19,14 @@ def _load_services() -> list[dict]:
         return json.load(f)["services"]
 
 
-def _load_templates() -> list[dict]:
-    with open(DATA_DIR / "templates.json") as f:
-        return json.load(f)["templates"]
+def _load_runbooks() -> list[dict]:
+    with open(DATA_DIR / "runbooks.json") as f:
+        return json.load(f)["runbooks"]
+
+
+def _load_sla_definitions() -> dict:
+    with open(DATA_DIR / "sla_definitions.json") as f:
+        return json.load(f)["sla_targets"]
 
 
 def resolve_service(reference: str) -> Optional[dict]:
@@ -39,15 +44,25 @@ def resolve_service(reference: str) -> Optional[dict]:
     return None
 
 
-def resolve_template(template_id: str) -> Optional[dict]:
-    """Resolve a template id to its canonical definition."""
-    templates = _load_templates()
-    for tpl in templates:
-        if tpl["id"] == template_id:
-            return tpl
+def resolve_runbook(runbook_id: str) -> Optional[dict]:
+    """Resolve a runbook id to its canonical definition."""
+    runbooks = _load_runbooks()
+    for rb in runbooks:
+        if rb["id"] == runbook_id:
+            return rb
     return None
 
 
-def all_templates() -> list[dict]:
-    """Return all templates (used by rules to find best match)."""
-    return _load_templates()
+def all_runbooks() -> list[dict]:
+    """Return all runbooks (used by rules to find best match)."""
+    return _load_runbooks()
+
+
+def resolve_sla(priority: str) -> Optional[dict]:
+    """
+    Resolve SLA targets for a given priority level (P1-P4).
+
+    Returns the response and resolution time targets, or None if unknown priority.
+    """
+    targets = _load_sla_definitions()
+    return targets.get(priority)

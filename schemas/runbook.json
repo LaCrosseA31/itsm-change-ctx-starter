@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Runbook",
+  "description": "A pre-defined incident response runbook. If an incident matches a runbook, the agent can suggest resolution steps or auto-remediation.",
+  "version": "1.0.0",
+  "owner": "SRE Lead + Incident Manager (co-owned)",
+  "type": "object",
+  "required": ["id", "name", "match_patterns", "applicable_service_tiers", "resolution_steps"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^RB-[A-Z0-9-]+$"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "match_patterns": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Keywords in incident title/description that indicate a runbook match"
+    },
+    "applicable_service_tiers": {
+      "type": "array",
+      "items": {"type": "string", "enum": ["critical", "standard", "non-critical"]},
+      "description": "Which service tiers this runbook applies to"
+    },
+    "resolution_steps": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Ordered list of resolution steps"
+    },
+    "estimated_resolution_minutes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "auto_remediable": {
+      "type": "boolean",
+      "description": "Whether this runbook can be executed automatically without human intervention"
+    }
+  }
+}

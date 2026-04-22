@@ -97,10 +97,30 @@ def affected_services(ci_ids: list[str]) -> list[dict]:
 
 
 def downstream_services(service_id: str) -> list[dict]:
-    """Services that depend on this service."""
+    """Services that depend on this service (i.e. would be impacted by its failure)."""
     g = graph()
     results = []
     for src, _, edge_data in g.in_edges(service_id, data=True):
         if edge_data["kind"] == "service_dependency":
             results.append({"service_id": src, "confidence": edge_data["confidence"]})
     return results
+
+
+def upstream_services(service_id: str) -> list[dict]:
+    """Services that this service depends on (i.e. potential root causes)."""
+    g = graph()
+    results = []
+    for _, tgt, edge_data in g.out_edges(service_id, data=True):
+        if edge_data["kind"] == "service_dependency":
+            results.append({"service_id": tgt, "confidence": edge_data["confidence"]})
+    return results
+
+
+def connected_service_ids(service_id: str) -> list[str]:
+    """All service IDs connected to this service (upstream + downstream)."""
+    ids = set()
+    for d in downstream_services(service_id):
+        ids.add(d["service_id"])
+    for u in upstream_services(service_id):
+        ids.add(u["service_id"])
+    return list(ids)

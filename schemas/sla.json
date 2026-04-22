@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SLA Definition",
+  "description": "Service Level Agreement targets per incident priority level.",
+  "version": "1.0.0",
+  "owner": "Service Delivery Manager",
+  "type": "object",
+  "required": ["sla_targets"],
+  "properties": {
+    "sla_targets": {
+      "type": "object",
+      "patternProperties": {
+        "^P[1-4]$": {
+          "type": "object",
+          "required": ["response_minutes", "resolution_minutes", "description"],
+          "properties": {
+            "response_minutes": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum minutes to acknowledge the incident"
+            },
+            "resolution_minutes": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Maximum minutes to resolve the incident"
+            },
+            "description": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

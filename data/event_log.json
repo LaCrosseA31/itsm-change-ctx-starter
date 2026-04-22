@@ -1,16 +1,134 @@
 {
   "events": [
-    {"event_id": "E-1001", "type": "rfc_closed", "rfc_id": "RFC-8801", "service_id": "svc-042", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "success", "timestamp": "2025-11-10T14:00:00Z"},
-    {"event_id": "E-1002", "type": "rfc_closed", "rfc_id": "RFC-8834", "service_id": "svc-042", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "success", "timestamp": "2025-12-02T09:15:00Z"},
-    {"event_id": "E-1003", "type": "rfc_closed", "rfc_id": "RFC-8901", "service_id": "svc-042", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "incident", "linked_incident": "INC-4421", "timestamp": "2026-01-15T11:30:00Z"},
-    {"event_id": "E-1004", "type": "incident_linked", "incident_id": "INC-4421", "service_id": "svc-042", "cause": "DNS propagation delay post cert rotation", "timestamp": "2026-01-15T12:00:00Z"},
-    {"event_id": "E-1005", "type": "rfc_closed", "rfc_id": "RFC-9102", "service_id": "svc-042", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "success", "timestamp": "2026-02-08T10:00:00Z"},
-    {"event_id": "E-1006", "type": "rfc_closed", "rfc_id": "RFC-9203", "service_id": "svc-042", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "success", "timestamp": "2026-02-22T16:45:00Z"},
-    {"event_id": "E-1007", "type": "rfc_closed", "rfc_id": "RFC-9301", "service_id": "svc-042", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "success", "timestamp": "2026-03-05T08:20:00Z"},
-    {"event_id": "E-1008", "type": "rfc_closed", "rfc_id": "RFC-9345", "service_id": "svc-042", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "success", "timestamp": "2026-03-12T13:10:00Z"},
-    {"event_id": "E-1009", "type": "rfc_closed", "rfc_id": "RFC-9402", "service_id": "svc-042", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "success", "timestamp": "2026-03-22T09:30:00Z"},
-    {"event_id": "E-1010", "type": "rfc_closed", "rfc_id": "RFC-9501", "service_id": "svc-042", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "success", "timestamp": "2026-04-01T14:15:00Z"},
-    {"event_id": "E-1011", "type": "rfc_closed", "rfc_id": "RFC-9620", "service_id": "svc-042", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "success", "timestamp": "2026-04-10T11:40:00Z"},
-    {"event_id": "E-1012", "type": "rfc_closed", "rfc_id": "RFC-9710", "service_id": "svc-055", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "success", "timestamp": "2026-04-15T15:00:00Z"}
+    {
+      "event_id": "E-2001",
+      "type": "incident_closed",
+      "incident_id": "INC-4801",
+      "service_id": "svc-042",
+      "symptom_category": "outage",
+      "priority_assigned": "P1",
+      "outcome": "resolved",
+      "resolution_minutes": 47,
+      "runbook_id": "RB-API-5XX",
+      "timestamp": "2025-11-15T16:00:00Z"
+    },
+    {
+      "event_id": "E-2002",
+      "type": "incident_closed",
+      "incident_id": "INC-4823",
+      "service_id": "svc-042",
+      "symptom_category": "degradation",
+      "priority_assigned": "P2",
+      "outcome": "resolved",
+      "resolution_minutes": 120,
+      "runbook_id": "RB-LATENCY-SPIKE",
+      "timestamp": "2025-12-03T11:30:00Z"
+    },
+    {
+      "event_id": "E-2003",
+      "type": "incident_closed",
+      "incident_id": "INC-4850",
+      "service_id": "svc-042",
+      "symptom_category": "outage",
+      "priority_assigned": "P1",
+      "outcome": "escalated",
+      "resolution_minutes": 95,
+      "runbook_id": null,
+      "linked_incidents": ["INC-4851"],
+      "timestamp": "2026-01-10T03:20:00Z"
+    },
+    {
+      "event_id": "E-2004",
+      "type": "incident_closed",
+      "incident_id": "INC-4851",
+      "service_id": "svc-089",
+      "symptom_category": "degradation",
+      "priority_assigned": "P2",
+      "outcome": "resolved",
+      "resolution_minutes": 95,
+      "runbook_id": null,
+      "linked_incidents": ["INC-4850"],
+      "timestamp": "2026-01-10T03:20:00Z"
+    },
+    {
+      "event_id": "E-2005",
+      "type": "incident_closed",
+      "incident_id": "INC-4900",
+      "service_id": "svc-101",
+      "symptom_category": "threshold_warning",
+      "priority_assigned": "P3",
+      "outcome": "resolved",
+      "resolution_minutes": 25,
+      "runbook_id": "RB-DISK-CLEANUP",
+      "timestamp": "2026-02-18T14:10:00Z"
+    },
+    {
+      "event_id": "E-2006",
+      "type": "incident_closed",
+      "incident_id": "INC-4921",
+      "service_id": "svc-101",
+      "symptom_category": "threshold_warning",
+      "priority_assigned": "P3",
+      "outcome": "resolved",
+      "resolution_minutes": 18,
+      "runbook_id": "RB-DISK-CLEANUP",
+      "timestamp": "2026-03-05T09:45:00Z"
+    },
+    {
+      "event_id": "E-2007",
+      "type": "incident_closed",
+      "incident_id": "INC-4955",
+      "service_id": "svc-042",
+      "symptom_category": "outage",
+      "priority_assigned": "P1",
+      "outcome": "resolved",
+      "resolution_minutes": 32,
+      "runbook_id": "RB-API-5XX",
+      "timestamp": "2026-03-20T07:55:00Z"
+    },
+    {
+      "event_id": "E-2008",
+      "type": "incident_closed",
+      "incident_id": "INC-4980",
+      "service_id": "svc-055",
+      "symptom_category": "error",
+      "priority_assigned": "P4",
+      "outcome": "resolved",
+      "resolution_minutes": 180,
+      "runbook_id": null,
+      "timestamp": "2026-04-02T15:30:00Z"
+    },
+    {
+      "event_id": "E-2009",
+      "type": "incident_closed",
+      "incident_id": "INC-4995",
+      "service_id": "svc-101",
+      "symptom_category": "threshold_warning",
+      "priority_assigned": "P3",
+      "outcome": "recurring",
+      "resolution_minutes": 20,
+      "runbook_id": "RB-DISK-CLEANUP",
+      "timestamp": "2026-04-10T11:00:00Z"
+    },
+    {
+      "event_id": "E-2010",
+      "type": "incident_open",
+      "incident_id": "INC-5010",
+      "service_id": "svc-042",
+      "symptom_category": "outage",
+      "priority_assigned": "P1",
+      "reported_at": "2026-04-21T08:45:00Z",
+      "timestamp": "2026-04-21T08:45:00Z"
+    },
+    {
+      "event_id": "E-2011",
+      "type": "incident_open",
+      "incident_id": "INC-5031",
+      "service_id": "svc-089",
+      "symptom_category": "degradation",
+      "priority_assigned": "P2",
+      "reported_at": "2026-04-21T09:00:00Z",
+      "timestamp": "2026-04-21T09:00:00Z"
+    }
   ]
 }

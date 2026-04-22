@@ -1,0 +1,64 @@
+{
+  "runbooks": [
+    {
+      "id": "RB-DISK-CLEANUP",
+      "name": "Disk Space Cleanup",
+      "description": "Automated disk cleanup for application servers. Removes old logs, temp files, and rotates compressed archives.",
+      "match_patterns": ["disk usage", "disk space", "storage full", "capacity"],
+      "applicable_service_tiers": ["critical", "standard", "non-critical"],
+      "resolution_steps": [
+        "Identify largest directories with du -sh",
+        "Rotate and compress logs older than 7 days",
+        "Clear application temp/cache directories",
+        "Verify disk usage dropped below 80%"
+      ],
+      "estimated_resolution_minutes": 30,
+      "auto_remediable": true
+    },
+    {
+      "id": "RB-CERT-EXPIRED",
+      "name": "Certificate Expiry Remediation",
+      "description": "Investigate and remediate TLS certificate expiry or mismatch issues.",
+      "match_patterns": ["certificate", "cert expired", "tls", "ssl", "x509"],
+      "applicable_service_tiers": ["critical", "standard", "non-critical"],
+      "resolution_steps": [
+        "Verify certificate expiry date with openssl",
+        "Check certificate chain validity",
+        "Trigger certificate rotation pipeline",
+        "Validate new certificate is served correctly"
+      ],
+      "estimated_resolution_minutes": 45,
+      "auto_remediable": false
+    },
+    {
+      "id": "RB-API-5XX",
+      "name": "API 5xx Error Investigation",
+      "description": "Triage and investigate HTTP 5xx errors on API services.",
+      "match_patterns": ["500 error", "5xx", "internal server error", "502", "503"],
+      "applicable_service_tiers": ["critical", "standard"],
+      "resolution_steps": [
+        "Check application logs for stack traces",
+        "Verify upstream dependency health",
+        "Check recent deployments for rollback candidates",
+        "Monitor error rate after mitigation"
+      ],
+      "estimated_resolution_minutes": 60,
+      "auto_remediable": false
+    },
+    {
+      "id": "RB-LATENCY-SPIKE",
+      "name": "Latency Investigation Playbook",
+      "description": "Investigate sudden latency increases on services.",
+      "match_patterns": ["latency", "slow", "response time", "timeout", "delayed"],
+      "applicable_service_tiers": ["critical", "standard"],
+      "resolution_steps": [
+        "Check service resource utilization (CPU, memory, connections)",
+        "Review database query performance",
+        "Check downstream dependency latency",
+        "Identify and remediate bottleneck"
+      ],
+      "estimated_resolution_minutes": 90,
+      "auto_remediable": false
+    }
+  ]
+}
