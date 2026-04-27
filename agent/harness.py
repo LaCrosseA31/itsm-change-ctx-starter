@@ -16,20 +16,54 @@ and is treated as untrusted — it is deliberately never read by the agent.
 Only structured fields (id, title, affected_cis, submitted_at) influence the
 classification.
 """
-from datetime import datetime
+import json
+from datetime import datetime, timezone
+from pathlib import Path
 
-from agent import config, history, meaning, relationships, rules
+from agent import config, history, meaning, relationships, rules, validation
+
+ROOT_DIR = Path(__file__).parent.parent
 
 
 def classify(rfc: dict) -> dict:
     """
-    Classify an RFC as standard, normal, or refused, with a full trace.
+    Classify an RFC as standard, normal, emergency, or refused, with a full trace.
 
     The trace is the audit log for the decision: every entry records which
     layer was called and what it returned. Any reason in the final decision
     must be traceable back to one of these entries.
+
+    Two short-circuits run before the five-step loop:
+      - kill-switch: a single config flag stops all auto-approvals instantly
+      - emergency: human-declared emergencies bypass agent reasoning entirely
     """
     trace: list[dict] = []
+
+    # ---------- 00 INTAKE ----------
+    # Validate the RFC against its canonical schema. A malformed RFC fails
+    # loudly here rather than producing a confidently-wrong classification.
+    validation.validate_rfc(rfc)
+
+    # Kill-switch: stops the world.
+    if config.KILL_SWITCH:
+        return _emit(_refuse(trace, "Kill-switch engaged. All auto-classifications disabled."), rfc)
+
+    # Emergency short-circuit: humans declare emergencies, the agent never does.
+    if rfc.get("change_type") == "emergency":
+        decision = {
+            "rfc_id": rfc["id"],
+            "classification": "emergency",
+            "route": "ECAB_review",
+            "reason": "Emergency change declared by human submitter. Agent reasoning bypassed.",
+        }
+        trace.append({"step": "00_intake", "action": "emergency_short_circuit", "result": decision})
+        return _emit({"decision": decision, "trace": trace}, rfc)
+
+    return _emit(_classify_main(rfc, trace), rfc)
+
+
+def _classify_main(rfc: dict, trace: list) -> dict:
+    """The five-step reasoning loop, after intake checks have passed."""
     submitted_at = datetime.fromisoformat(rfc["submitted_at"].replace("Z", "+00:00"))
 
     # ---------- 01 RESOLVE ----------
@@ -108,6 +142,30 @@ def classify(rfc: dict) -> dict:
 
     # ---------- 05 ACT ----------
     return _decide(rfc, service, rule_results, prior, trace)
+
+
+def _emit(result: dict, rfc: dict) -> dict:
+    """
+    Append the decision to the audit log so the agent's own behaviour becomes
+    queryable history. Closes the loop with the history layer: tomorrow's
+    classifications can see today's decisions. Returns the result unchanged.
+    """
+    if config.AUDIT_LOG_PATH is None:
+        return result
+    audit_path = ROOT_DIR / config.AUDIT_LOG_PATH
+    audit_path.parent.mkdir(parents=True, exist_ok=True)
+    decision = result["decision"]
+    entry = {
+        "type": "rfc_classified",
+        "rfc_id": rfc.get("id"),
+        "classification": decision.get("classification"),
+        "route": decision.get("route"),
+        "reason": decision.get("reason"),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    with open(audit_path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry) + "\n")
+    return result
 
 
 def _first_unreliable(affected: list[dict]) -> str | None:

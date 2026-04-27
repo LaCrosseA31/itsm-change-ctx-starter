@@ -1,13 +1,28 @@
 """
-Tests that reproduce the three scenarios from the Worked Example (Phase 5).
+Tests that reproduce the scenarios from the Worked Example (Phase 5).
 Run with: pytest -v
 """
 import json
 from pathlib import Path
+
+import jsonschema
 import pytest
+
+from agent import config
 from agent.harness import classify
 
 DATA_DIR = Path(__file__).parent.parent / "data"
+ROOT_DIR = Path(__file__).parent.parent
+
+
+@pytest.fixture(autouse=True)
+def _isolate_audit_log(tmp_path, monkeypatch):
+    """
+    The agent appends every decision to a JSONL audit log. Tests redirect that
+    log to a per-test temp file so concurrent runs don't pollute each other and
+    no on-disk artifact survives the test run.
+    """
+    monkeypatch.setattr(config, "AUDIT_LOG_PATH", str(tmp_path / "audit_log.jsonl"))
 
 
 def _load_rfc(rfc_id: str) -> dict:
@@ -90,14 +105,65 @@ def test_scenario_6_downstream_blast_radius_escalates():
     assert "blast radius" in result["decision"]["reason"].lower()
 
 
+def test_emergency_short_circuit_bypasses_reasoning():
+    """
+    Emergency changes are declared by humans, never by the agent.
+    The harness must short-circuit before resolving CIs or evaluating rules.
+    """
+    rfc = _load_rfc("RFC-9930")
+    result = classify(rfc)
+    assert result["decision"]["classification"] == "emergency"
+    assert result["decision"]["route"] == "ECAB_review"
+    # Only the intake step should run.
+    steps = [e["step"] for e in result["trace"]]
+    assert steps == ["00_intake"]
+
+
+def test_kill_switch_refuses_everything(monkeypatch):
+    """
+    When the kill-switch is engaged the agent refuses every classification —
+    even on RFCs that would otherwise auto-approve.
+    """
+    monkeypatch.setattr(config, "KILL_SWITCH", True)
+    rfc = _load_rfc("RFC-9812")
+    result = classify(rfc)
+    assert result["decision"]["classification"] == "refused"
+    assert "kill-switch" in result["decision"]["reason"].lower()
+
+
+def test_schema_validation_rejects_malformed_rfc():
+    """
+    A malformed RFC fails loudly at the boundary, not deep inside reasoning.
+    Here we drop the required `affected_cis` field.
+    """
+    rfc = _load_rfc("RFC-9812").copy()
+    del rfc["affected_cis"]
+    with pytest.raises(jsonschema.ValidationError):
+        classify(rfc)
+
+
+def test_audit_log_records_every_decision(tmp_path, monkeypatch):
+    """
+    Every classification — including refusals and emergencies — must be
+    appended to the audit log so the agent's behaviour is reviewable.
+    """
+    audit_path = tmp_path / "audit_log.jsonl"
+    monkeypatch.setattr(config, "AUDIT_LOG_PATH", str(audit_path))
+    for rfc_id in ["RFC-9812", "RFC-9903", "RFC-9930"]:
+        classify(_load_rfc(rfc_id))
+    lines = audit_path.read_text(encoding="utf-8").strip().splitlines()
+    entries = [json.loads(line) for line in lines]
+    assert [e["rfc_id"] for e in entries] == ["RFC-9812", "RFC-9903", "RFC-9930"]
+    assert {e["classification"] for e in entries} == {"standard", "refused", "emergency"}
+
+
 def test_every_decision_has_a_trace():
     """
     The agent must never return a decision without a trace.
     Groundedness is non-negotiable.
     """
-    for rfc_id in ["RFC-9812", "RFC-9847", "RFC-9903", "RFC-9920", "RFC-9921", "RFC-9922"]:
+    for rfc_id in ["RFC-9812", "RFC-9847", "RFC-9903", "RFC-9920", "RFC-9921", "RFC-9922", "RFC-9930"]:
         rfc = _load_rfc(rfc_id)
         result = classify(rfc)
         assert "trace" in result
         assert len(result["trace"]) >= 1
-        assert any(e["step"].startswith("05") for e in result["trace"])

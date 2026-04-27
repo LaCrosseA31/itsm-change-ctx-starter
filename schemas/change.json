@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "owner": "CAB chair",
   "type": "object",
-  "required": ["id", "title", "submitter", "submitted_at", "affected_cis", "change_type"],
+  "required": ["id", "title", "submitter", "submitted_at", "affected_cis"],
   "properties": {
     "id": {
       "type": "string",
@@ -34,9 +34,9 @@
       "description": "CI IDs the change will touch (engineer-declared)"
     },
     "change_type": {
-      "type": "string",
-      "enum": ["standard", "normal", "emergency"],
-      "description": "Classification. Emergency is always declared by humans, never by the agent."
+      "type": ["string", "null"],
+      "enum": ["standard", "normal", "emergency", null],
+      "description": "Submitter's pre-classification. Usually null — the agent decides. 'emergency' is always declared by humans, never by the agent."
     },
     "proposed_template_id": {
       "type": "string",

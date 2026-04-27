@@ -59,6 +59,15 @@
       "affected_cis": ["ci-notification-tls"],
       "change_type": null,
       "proposed_template_id": "TPL-CERT-ROTATE-STD"
+    },
+    {
+      "id": "RFC-9930",
+      "title": "Emergency cert rollback for payment-api",
+      "description": "Active incident — rotated cert is failing TLS handshake on 30% of clients. Rolling back immediately.",
+      "submitter": "grace.oncall",
+      "submitted_at": "2026-04-22T22:45:00Z",
+      "affected_cis": ["ci-payment-tls"],
+      "change_type": "emergency"
     }
   ]
 }
