@@ -21,14 +21,22 @@ pip install -r requirements.txt
 python classify.py RFC-9812   # Auto-approve scenario
 python classify.py RFC-9847   # DORA override scenario
 python classify.py RFC-9903   # Low-confidence refusal scenario
-pytest -v                     # Run all three as tests
+python classify.py RFC-9920   # Freeze window scenario
+python classify.py RFC-9921   # Precedent override scenario
+python classify.py RFC-9922   # Downstream blast radius scenario
+pytest -v                     # Run all six as tests
 ```
 
-## The three scenarios
+## The six scenarios
 
 - **RFC-9812** — cert rotation on `internal-dashboard` (non-regulated) → `standard` / auto-approve
 - **RFC-9847** — cert rotation on `payment-api` (DORA-regulated) → `normal` / CAB fast track. The DORA override fires even though the template matches.
 - **RFC-9903** — cert rotation on `fraud-check` (stale CMDB edge, confidence 0.72) → `refused`. The agent refuses to act on unreliable dependency data.
+- **RFC-9920** — cert rotation on `internal-dashboard` submitted during the spring patch freeze → `normal` / CAB review. Calendar policy beats template match.
+- **RFC-9921** — cert rotation on `marketing-site` whose recent history is 3-of-5 incidents → `normal` / CAB review. The history layer earns its keep: a clean template plus a bumpy track record is a reason to escalate, not auto-approve.
+- **RFC-9922** — cert rotation on `notification-service` (non-DORA, standard tier) on which DORA-regulated `payment-api` depends → `normal` / CAB review. Direct service is safe; blast radius is not.
+
+All design knobs (confidence thresholds, freshness window, precedent rate, template match floor) live in `agent/config.py`.
 
 ## Where production would differ
 

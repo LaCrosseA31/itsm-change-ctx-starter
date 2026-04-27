@@ -29,6 +29,36 @@
       "affected_cis": ["ci-fraud-tls"],
       "change_type": null,
       "proposed_template_id": "TPL-CERT-ROTATE-STD"
+    },
+    {
+      "id": "RFC-9920",
+      "title": "Certificate rotation for internal-dashboard",
+      "description": "TLS cert rotation for internal-dashboard. Submitted during the spring patch freeze.",
+      "submitter": "dave.engineer",
+      "submitted_at": "2026-04-24T10:00:00Z",
+      "affected_cis": ["ci-dashboard-tls"],
+      "change_type": null,
+      "proposed_template_id": "TPL-CERT-ROTATE-STD"
+    },
+    {
+      "id": "RFC-9921",
+      "title": "Certificate rotation for marketing-site",
+      "description": "TLS cert rotation for marketing-site. History on this service has been bumpy.",
+      "submitter": "erin.engineer",
+      "submitted_at": "2026-04-22T08:30:00Z",
+      "affected_cis": ["ci-marketing-tls"],
+      "change_type": null,
+      "proposed_template_id": "TPL-CERT-ROTATE-STD"
+    },
+    {
+      "id": "RFC-9922",
+      "title": "Certificate rotation for notification-service",
+      "description": "TLS cert rotation for notification-service. Direct service is non-DORA, but payment-api depends on it.",
+      "submitter": "frank.engineer",
+      "submitted_at": "2026-04-22T09:15:00Z",
+      "affected_cis": ["ci-notification-tls"],
+      "change_type": null,
+      "proposed_template_id": "TPL-CERT-ROTATE-STD"
     }
   ]
 }

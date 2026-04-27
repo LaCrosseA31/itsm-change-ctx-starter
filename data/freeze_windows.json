@@ -1,6 +1,12 @@
 {
   "freeze_windows": [
     {
+      "name": "Spring patch freeze",
+      "start": "2026-04-23T00:00:00Z",
+      "end": "2026-04-25T23:59:59Z",
+      "reason": "Coordinated patch deployment window — non-emergency changes paused"
+    },
+    {
       "name": "Q2 close",
       "start": "2026-06-28T00:00:00Z",
       "end": "2026-07-02T23:59:59Z",

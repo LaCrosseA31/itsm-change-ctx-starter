@@ -11,6 +11,10 @@
     {"event_id": "E-1009", "type": "rfc_closed", "rfc_id": "RFC-9402", "service_id": "svc-042", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "success", "timestamp": "2026-03-22T09:30:00Z"},
     {"event_id": "E-1010", "type": "rfc_closed", "rfc_id": "RFC-9501", "service_id": "svc-042", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "success", "timestamp": "2026-04-01T14:15:00Z"},
     {"event_id": "E-1011", "type": "rfc_closed", "rfc_id": "RFC-9620", "service_id": "svc-042", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "success", "timestamp": "2026-04-10T11:40:00Z"},
-    {"event_id": "E-1012", "type": "rfc_closed", "rfc_id": "RFC-9710", "service_id": "svc-055", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "success", "timestamp": "2026-04-15T15:00:00Z"}
+    {"event_id": "E-1012", "type": "rfc_closed", "rfc_id": "RFC-9710", "service_id": "svc-055", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "success", "timestamp": "2026-04-15T15:00:00Z"},
+    {"event_id": "E-1013", "type": "rfc_closed", "rfc_id": "RFC-9650", "service_id": "svc-055", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "incident", "linked_incident": "INC-5021", "timestamp": "2026-03-28T10:00:00Z"},
+    {"event_id": "E-1014", "type": "rfc_closed", "rfc_id": "RFC-9601", "service_id": "svc-055", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "incident", "linked_incident": "INC-5018", "timestamp": "2026-03-14T09:30:00Z"},
+    {"event_id": "E-1015", "type": "rfc_closed", "rfc_id": "RFC-9550", "service_id": "svc-055", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "incident", "linked_incident": "INC-5009", "timestamp": "2026-02-26T14:20:00Z"},
+    {"event_id": "E-1016", "type": "rfc_closed", "rfc_id": "RFC-9410", "service_id": "svc-055", "template_id": "TPL-CERT-ROTATE-STD", "outcome": "success", "timestamp": "2026-02-10T11:45:00Z"}
   ]
 }

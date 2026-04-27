@@ -15,20 +15,26 @@ Here they are Python functions — the structure is what matters.
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from agent import config
 from agent.meaning import all_templates
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 
-# Match threshold — part of the design, not the data.
-TEMPLATE_MATCH_THRESHOLD = 0.60
+# Re-export so existing callers can still read `rules.TEMPLATE_MATCH_THRESHOLD`.
+TEMPLATE_MATCH_THRESHOLD = config.TEMPLATE_MATCH_THRESHOLD
 
 
 def match_template(rfc: dict, service: dict) -> dict:
     """
     Score the RFC against every template and pick the best match.
 
-    Returns the best template with a score in [0, 1].
-    A score below threshold means no template applies — route to CAB.
+    Returns the best template with a score in [0, 1] — the fraction of the
+    template's match patterns that appear in the RFC title. A score below
+    `TEMPLATE_MATCH_THRESHOLD` means no template applies — route to CAB.
+
+    The scoring is deliberately simple keyword overlap. Production systems
+    would use embeddings; the design point here is "score, threshold, refuse",
+    not the score function itself.
     """
     title = rfc["title"].lower()
     templates = all_templates()
@@ -37,9 +43,8 @@ def match_template(rfc: dict, service: dict) -> dict:
     for tpl in templates:
         if service["tier"] not in tpl["allowed_service_tiers"]:
             continue
-        # Simple keyword match — production would use NLP / embeddings.
         hits = sum(1 for pat in tpl["match_patterns"] if pat in title)
-        score = min(1.0, hits / max(1, len(tpl["match_patterns"])) + (0.4 if hits > 0 else 0.0))
+        score = hits / len(tpl["match_patterns"])
         if score > best["score"]:
             best = {"template_id": tpl["id"], "score": score, "template": tpl}
     return best
@@ -76,6 +81,48 @@ def check_dora_override(service: dict) -> dict:
                       f"All changes to this service require CAB review.",
         }
     return {"override": False}
+
+
+def check_downstream_blast(service: dict, downstream: list[dict]) -> dict:
+    """
+    The blast-radius rule: even if the directly affected service is safe to
+    auto-approve, escalate when something downstream is DORA-regulated or
+    classified as `critical`. The relationships layer already knows the graph;
+    this rule encodes the policy of "treat blast radius as part of the change."
+    """
+    triggers = []
+    for d in downstream:
+        if d.get("dora_regulated"):
+            triggers.append({"service_id": d["id"], "name": d["name"], "why": "downstream_dora"})
+        elif d.get("tier") == "critical":
+            triggers.append({"service_id": d["id"], "name": d["name"], "why": "downstream_critical"})
+    if triggers:
+        return {"escalate": True, "triggers": triggers}
+    return {"escalate": False, "triggers": []}
+
+
+def check_precedent(prior: dict) -> dict:
+    """
+    The precedent rule: a clean template plus a clean track record is much
+    stronger evidence than a clean template alone. A clean template plus a
+    history of incidents is a reason to escalate, not auto-approve.
+
+    We require a minimum sample size before precedent can gate — one bad day
+    out of one prior change is not a trend.
+    """
+    found = prior.get("found", 0)
+    incidents = prior.get("incident", 0)
+    if found < config.PRECEDENT_MIN_SAMPLE:
+        return {"escalate": False, "reason": "insufficient_sample", "sample_size": found}
+    rate = incidents / found
+    if rate > config.PRECEDENT_INCIDENT_RATE_THRESHOLD:
+        return {
+            "escalate": True,
+            "incident_rate": rate,
+            "incidents": incidents,
+            "sample_size": found,
+        }
+    return {"escalate": False, "incident_rate": rate, "sample_size": found}
 
 
 def evaluate_all(rfc: dict, service: dict) -> dict:
