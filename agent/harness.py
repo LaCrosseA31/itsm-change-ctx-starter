@@ -238,12 +238,16 @@ def _decide(rfc: dict, service: dict, rule_results: dict, prior: dict, trace: li
         return {"decision": decision, "trace": trace}
 
     # 3. Freeze window.
-    if rule_results["freeze_window"]["in_freeze"]:
+    fw = rule_results["freeze_window"]
+    if fw["in_freeze"]:
+        field_label = "Planned execution" if fw["checked_field"] == "planned_start_at" else "Submission time"
         decision = {
             "rfc_id": rfc["id"],
             "classification": "normal",
             "route": "CAB_review",
-            "reason": f"In freeze window: {rule_results['freeze_window']['window']}",
+            "reason": (
+                f"{field_label} ({fw['checked_at']}) falls in freeze window: {fw['window']}."
+            ),
         }
         trace.append({"step": "05_act", "action": "decide", "result": decision})
         return {"decision": decision, "trace": trace}

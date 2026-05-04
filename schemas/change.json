@@ -28,6 +28,11 @@
       "type": "string",
       "format": "date-time"
     },
+    "planned_start_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the change is planned to execute. Optional. Freeze-window checks consult this when present, falling back to submitted_at — real CAB policy gates on execution time, not on when the engineer typed in the RFC."
+    },
     "affected_cis": {
       "type": "array",
       "items": {"type": "string"},

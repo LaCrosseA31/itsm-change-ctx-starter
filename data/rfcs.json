@@ -33,9 +33,10 @@
     {
       "id": "RFC-9920",
       "title": "Certificate rotation for internal-dashboard",
-      "description": "TLS cert rotation for internal-dashboard. Submitted during the spring patch freeze.",
+      "description": "TLS cert rotation for internal-dashboard. Planned execution falls inside the spring patch freeze.",
       "submitter": "dave.engineer",
       "submitted_at": "2026-04-24T10:00:00Z",
+      "planned_start_at": "2026-04-24T22:00:00Z",
       "affected_cis": ["ci-dashboard-tls"],
       "change_type": null,
       "proposed_template_id": "TPL-CERT-ROTATE-STD"
@@ -57,6 +58,17 @@
       "submitter": "frank.engineer",
       "submitted_at": "2026-04-22T09:15:00Z",
       "affected_cis": ["ci-notification-tls"],
+      "change_type": null,
+      "proposed_template_id": "TPL-CERT-ROTATE-STD"
+    },
+    {
+      "id": "RFC-9923",
+      "title": "Certificate rotation for internal-dashboard",
+      "description": "TLS cert rotation for internal-dashboard. Submitted before the spring patch freeze begins, but planned to execute on day 2 of the freeze. Submission timing alone would not catch this — only the planned-execution check does.",
+      "submitter": "heidi.engineer",
+      "submitted_at": "2026-04-21T14:00:00Z",
+      "planned_start_at": "2026-04-24T22:00:00Z",
+      "affected_cis": ["ci-dashboard-tls"],
       "change_type": null,
       "proposed_template_id": "TPL-CERT-ROTATE-STD"
     },

@@ -69,14 +69,18 @@ def test_scenario_3_low_confidence_refusal():
 
 def test_scenario_4_freeze_window_fires():
     """
-    Scenario 4: cert rotation submitted during the spring patch freeze window.
-    Expected: routed to CAB review with the freeze name in the reason.
+    Scenario 4: cert rotation whose planned execution falls in the spring
+    patch freeze window.
+    Expected: routed to CAB review with the freeze name in the reason, and
+    the trace records that the rule consulted planned_start_at.
     """
     rfc = _load_rfc("RFC-9920")
     result = classify(rfc)
     assert result["decision"]["classification"] == "normal"
     assert result["decision"]["route"] == "CAB_review"
     assert "freeze" in result["decision"]["reason"].lower()
+    evaluate_step = next(e for e in result["trace"] if e["step"] == "03_evaluate")
+    assert evaluate_step["result"]["freeze_window"]["checked_field"] == "planned_start_at"
 
 
 def test_scenario_5_precedent_overrides_template_match():
@@ -90,6 +94,51 @@ def test_scenario_5_precedent_overrides_template_match():
     assert result["decision"]["classification"] == "normal"
     assert result["decision"]["route"] == "CAB_review"
     assert "precedent" in result["decision"]["reason"].lower()
+
+
+def test_scenario_7_planned_start_in_freeze_only_caught_by_planned_check():
+    """
+    Scenario 7: cert rotation submitted *before* the spring patch freeze
+    begins, but planned to execute during it. The submission timestamp alone
+    would let this auto-approve — only checking planned_start_at catches it.
+
+    This is the lesson behind the planned_start_at field: real CAB freeze
+    policy gates on execution time, not on when the engineer typed the RFC.
+    """
+    rfc = _load_rfc("RFC-9923")
+    result = classify(rfc)
+    assert result["decision"]["classification"] == "normal"
+    assert result["decision"]["route"] == "CAB_review"
+    assert "freeze" in result["decision"]["reason"].lower()
+    assert "planned execution" in result["decision"]["reason"].lower()
+    evaluate_step = next(e for e in result["trace"] if e["step"] == "03_evaluate")
+    fw = evaluate_step["result"]["freeze_window"]
+    assert fw["checked_field"] == "planned_start_at"
+    assert fw["checked_at"] == rfc["planned_start_at"]
+
+
+def test_freeze_window_falls_back_to_submitted_at_when_planned_absent():
+    """
+    Legacy RFCs without a planned_start_at field fall back to checking
+    submitted_at — a clean fallback so the rule still produces a verdict
+    rather than crashing on a missing field.
+    """
+    from agent.rules import check_freeze_window
+    legacy_rfc_in_freeze = {
+        "id": "RFC-LEGACY-1",
+        "submitted_at": "2026-04-24T10:00:00Z",
+    }
+    result = check_freeze_window(legacy_rfc_in_freeze)
+    assert result["in_freeze"] is True
+    assert result["checked_field"] == "submitted_at"
+
+    legacy_rfc_outside_freeze = {
+        "id": "RFC-LEGACY-2",
+        "submitted_at": "2026-04-21T10:00:00Z",
+    }
+    result = check_freeze_window(legacy_rfc_outside_freeze)
+    assert result["in_freeze"] is False
+    assert result["checked_field"] == "submitted_at"
 
 
 def test_scenario_6_downstream_blast_radius_escalates():
@@ -162,7 +211,7 @@ def test_every_decision_has_a_trace():
     The agent must never return a decision without a trace.
     Groundedness is non-negotiable.
     """
-    for rfc_id in ["RFC-9812", "RFC-9847", "RFC-9903", "RFC-9920", "RFC-9921", "RFC-9922", "RFC-9930"]:
+    for rfc_id in ["RFC-9812", "RFC-9847", "RFC-9903", "RFC-9920", "RFC-9921", "RFC-9922", "RFC-9923", "RFC-9930"]:
         rfc = _load_rfc(rfc_id)
         result = classify(rfc)
         assert "trace" in result

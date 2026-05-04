@@ -50,19 +50,44 @@ def match_template(rfc: dict, service: dict) -> dict:
     return best
 
 
-def check_freeze_window(submitted_at: str) -> dict:
-    """Is the RFC submitted during an active freeze window?"""
+def check_freeze_window(rfc: dict) -> dict:
+    """
+    Does the RFC's planned execution fall in an active freeze window?
+
+    Real CAB freeze policy gates on when the change *runs*, not when the
+    engineer typed it in. We consult `planned_start_at` if present, falling
+    back to `submitted_at` for legacy RFCs that don't carry the field. The
+    result records `checked_field` and `checked_at` so the trace explains
+    exactly which timestamp the rule keyed on.
+    """
     with open(DATA_DIR / "freeze_windows.json") as f:
         data = json.load(f)
 
-    now = datetime.fromisoformat(submitted_at.replace("Z", "+00:00"))
+    if rfc.get("planned_start_at"):
+        timestamp_str = rfc["planned_start_at"]
+        checked_field = "planned_start_at"
+    else:
+        timestamp_str = rfc["submitted_at"]
+        checked_field = "submitted_at"
+
+    when = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
     for fw in data["freeze_windows"]:
         start = datetime.fromisoformat(fw["start"].replace("Z", "+00:00"))
         end = datetime.fromisoformat(fw["end"].replace("Z", "+00:00"))
-        if start <= now <= end:
-            return {"in_freeze": True, "window": fw["name"], "reason": fw["reason"]}
+        if start <= when <= end:
+            return {
+                "in_freeze": True,
+                "window": fw["name"],
+                "reason": fw["reason"],
+                "checked_field": checked_field,
+                "checked_at": timestamp_str,
+            }
 
-    return {"in_freeze": False}
+    return {
+        "in_freeze": False,
+        "checked_field": checked_field,
+        "checked_at": timestamp_str,
+    }
 
 
 def check_dora_override(service: dict) -> dict:
@@ -129,6 +154,6 @@ def evaluate_all(rfc: dict, service: dict) -> dict:
     """Run every rule for this RFC/service pair and return a consolidated result."""
     return {
         "template_match": match_template(rfc, service),
-        "freeze_window": check_freeze_window(rfc["submitted_at"]),
+        "freeze_window": check_freeze_window(rfc),
         "dora_override": check_dora_override(service),
     }
