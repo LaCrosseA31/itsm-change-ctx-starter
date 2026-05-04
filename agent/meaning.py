@@ -11,14 +11,20 @@ import json
 from pathlib import Path
 from typing import Optional
 
+from agent import validation
+
 DATA_DIR = Path(__file__).parent.parent / "data"
 
 
 def _load_services() -> list[dict]:
     with open(DATA_DIR / "services.json") as f:
-        return json.load(f)["services"]
+        services = json.load(f)["services"]
+    for svc in services:
+        validation.validate_service(svc)
+    return services
 
 
+<<<<<<< HEAD
 def _load_runbooks() -> list[dict]:
     with open(DATA_DIR / "runbooks.json") as f:
         return json.load(f)["runbooks"]
@@ -27,6 +33,14 @@ def _load_runbooks() -> list[dict]:
 def _load_sla_definitions() -> dict:
     with open(DATA_DIR / "sla_definitions.json") as f:
         return json.load(f)["sla_targets"]
+=======
+def _load_templates() -> list[dict]:
+    with open(DATA_DIR / "templates.json") as f:
+        templates = json.load(f)["templates"]
+    for tpl in templates:
+        validation.validate_template(tpl)
+    return templates
+>>>>>>> 8dbe177952bd4455e20269516099af3c082a3b28
 
 
 def resolve_service(reference: str) -> Optional[dict]:

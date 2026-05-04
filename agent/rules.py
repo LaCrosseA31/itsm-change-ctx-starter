@@ -15,13 +15,24 @@ In production, these would be Rego policies evaluated by OPA.
 Here they are Python functions — the structure is what matters.
 """
 from datetime import datetime, timezone
+<<<<<<< HEAD
 from agent.meaning import all_runbooks, resolve_sla
+=======
+from pathlib import Path
+from agent import config
+from agent.meaning import all_templates
+>>>>>>> 8dbe177952bd4455e20269516099af3c082a3b28
 
 # Match threshold for runbook matching — part of the design, not the data.
 RUNBOOK_MATCH_THRESHOLD = 0.60
 
+<<<<<<< HEAD
 # Priority ordering (lower index = more severe).
 _PRIORITY_ORDER = ["P1", "P2", "P3", "P4"]
+=======
+# Re-export so existing callers can still read `rules.TEMPLATE_MATCH_THRESHOLD`.
+TEMPLATE_MATCH_THRESHOLD = config.TEMPLATE_MATCH_THRESHOLD
+>>>>>>> 8dbe177952bd4455e20269516099af3c082a3b28
 
 
 def _most_severe(*priorities: str) -> str:
@@ -37,8 +48,18 @@ def match_runbook(incident: dict, service: dict) -> dict:
     """
     Score the incident against every runbook and pick the best match.
 
+<<<<<<< HEAD
     Returns the best runbook with a score in [0, 1].
     A score below threshold means no runbook applies.
+=======
+    Returns the best template with a score in [0, 1] — the fraction of the
+    template's match patterns that appear in the RFC title. A score below
+    `TEMPLATE_MATCH_THRESHOLD` means no template applies — route to CAB.
+
+    The scoring is deliberately simple keyword overlap. Production systems
+    would use embeddings; the design point here is "score, threshold, refuse",
+    not the score function itself.
+>>>>>>> 8dbe177952bd4455e20269516099af3c082a3b28
     """
     text = (incident["title"] + " " + incident.get("description", "")).lower()
     runbooks = all_runbooks()
@@ -47,20 +68,69 @@ def match_runbook(incident: dict, service: dict) -> dict:
     for rb in runbooks:
         if service["tier"] not in rb["applicable_service_tiers"]:
             continue
+<<<<<<< HEAD
         # Simple keyword match — production would use NLP / embeddings.
         hits = sum(1 for pat in rb["match_patterns"] if pat in text)
         score = min(1.0, hits / max(1, len(rb["match_patterns"])) + (0.4 if hits > 0 else 0.0))
+=======
+        hits = sum(1 for pat in tpl["match_patterns"] if pat in title)
+        score = hits / len(tpl["match_patterns"])
+>>>>>>> 8dbe177952bd4455e20269516099af3c082a3b28
         if score > best["score"]:
             best = {"runbook_id": rb["id"], "score": score, "runbook": rb}
     return best
 
 
+<<<<<<< HEAD
 def calculate_priority(
     incident: dict,
     service: dict,
     downstream: list[dict],
     upstream: list[dict],
 ) -> dict:
+=======
+def check_freeze_window(rfc: dict) -> dict:
+    """
+    Does the RFC's planned execution fall in an active freeze window?
+
+    Real CAB freeze policy gates on when the change *runs*, not when the
+    engineer typed it in. We consult `planned_start_at` if present, falling
+    back to `submitted_at` for legacy RFCs that don't carry the field. The
+    result records `checked_field` and `checked_at` so the trace explains
+    exactly which timestamp the rule keyed on.
+    """
+    with open(DATA_DIR / "freeze_windows.json") as f:
+        data = json.load(f)
+
+    if rfc.get("planned_start_at"):
+        timestamp_str = rfc["planned_start_at"]
+        checked_field = "planned_start_at"
+    else:
+        timestamp_str = rfc["submitted_at"]
+        checked_field = "submitted_at"
+
+    when = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+    for fw in data["freeze_windows"]:
+        start = datetime.fromisoformat(fw["start"].replace("Z", "+00:00"))
+        end = datetime.fromisoformat(fw["end"].replace("Z", "+00:00"))
+        if start <= when <= end:
+            return {
+                "in_freeze": True,
+                "window": fw["name"],
+                "reason": fw["reason"],
+                "checked_field": checked_field,
+                "checked_at": timestamp_str,
+            }
+
+    return {
+        "in_freeze": False,
+        "checked_field": checked_field,
+        "checked_at": timestamp_str,
+    }
+
+
+def check_dora_override(service: dict) -> dict:
+>>>>>>> 8dbe177952bd4455e20269516099af3c082a3b28
     """
     Determine incident priority (P1-P4) from multiple signals.
 
@@ -69,6 +139,7 @@ def calculate_priority(
     """
     factors = {}
 
+<<<<<<< HEAD
     # Factor 1: Service tier.
     tier_map = {"critical": "P2", "standard": "P3", "non-critical": "P4"}
     factors["service_tier"] = {
@@ -176,4 +247,55 @@ def evaluate_all(
         "priority": priority_result,
         "runbook_match": match_runbook(incident, service),
         "sla": check_sla(priority_result["priority"], incident["reported_at"]),
+=======
+
+def check_downstream_blast(service: dict, downstream: list[dict]) -> dict:
+    """
+    The blast-radius rule: even if the directly affected service is safe to
+    auto-approve, escalate when something downstream is DORA-regulated or
+    classified as `critical`. The relationships layer already knows the graph;
+    this rule encodes the policy of "treat blast radius as part of the change."
+    """
+    triggers = []
+    for d in downstream:
+        if d.get("dora_regulated"):
+            triggers.append({"service_id": d["id"], "name": d["name"], "why": "downstream_dora"})
+        elif d.get("tier") == "critical":
+            triggers.append({"service_id": d["id"], "name": d["name"], "why": "downstream_critical"})
+    if triggers:
+        return {"escalate": True, "triggers": triggers}
+    return {"escalate": False, "triggers": []}
+
+
+def check_precedent(prior: dict) -> dict:
+    """
+    The precedent rule: a clean template plus a clean track record is much
+    stronger evidence than a clean template alone. A clean template plus a
+    history of incidents is a reason to escalate, not auto-approve.
+
+    We require a minimum sample size before precedent can gate — one bad day
+    out of one prior change is not a trend.
+    """
+    found = prior.get("found", 0)
+    incidents = prior.get("incident", 0)
+    if found < config.PRECEDENT_MIN_SAMPLE:
+        return {"escalate": False, "reason": "insufficient_sample", "sample_size": found}
+    rate = incidents / found
+    if rate > config.PRECEDENT_INCIDENT_RATE_THRESHOLD:
+        return {
+            "escalate": True,
+            "incident_rate": rate,
+            "incidents": incidents,
+            "sample_size": found,
+        }
+    return {"escalate": False, "incident_rate": rate, "sample_size": found}
+
+
+def evaluate_all(rfc: dict, service: dict) -> dict:
+    """Run every rule for this RFC/service pair and return a consolidated result."""
+    return {
+        "template_match": match_template(rfc, service),
+        "freeze_window": check_freeze_window(rfc),
+        "dora_override": check_dora_override(service),
+>>>>>>> 8dbe177952bd4455e20269516099af3c082a3b28
     }

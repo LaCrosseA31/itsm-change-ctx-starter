@@ -18,3 +18,6 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime audit log emitted by the agent on each classification.
+data/audit_log.jsonl

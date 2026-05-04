@@ -12,11 +12,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 import networkx as nx
 
-DATA_DIR = Path(__file__).parent.parent / "data"
+from agent import config
 
-# Thresholds — part of the context layer's design, not the data.
-MIN_EDGE_CONFIDENCE = 0.80
-MAX_EDGE_AGE_DAYS = 30
+DATA_DIR = Path(__file__).parent.parent / "data"
 
 
 def _build_graph() -> nx.DiGraph:
@@ -61,16 +59,21 @@ def graph() -> nx.DiGraph:
     return _GRAPH
 
 
-def affected_services(ci_ids: list[str]) -> list[dict]:
+def affected_services(ci_ids: list[str], now: datetime | None = None) -> list[dict]:
     """
     Given a list of CI ids, return the services they affect.
 
     Each result includes a confidence score AND a freshness flag.
     The agent uses both to decide whether to trust the answer.
+
+    `now` is the reference time for freshness. The harness passes the RFC's
+    `submitted_at` so a classification on a given RFC is deterministic — running
+    the same RFC tomorrow vs. today must produce the same verdict.
     """
     g = graph()
     results = []
-    now = datetime.now(timezone.utc)
+    if now is None:
+        now = datetime.now(timezone.utc)
 
     for ci_id in ci_ids:
         if ci_id not in g:
@@ -83,7 +86,7 @@ def affected_services(ci_ids: list[str]) -> list[dict]:
 
             last_verified = datetime.fromisoformat(edge_data["last_verified"].replace("Z", "+00:00"))
             age_days = (now - last_verified).days
-            fresh = age_days <= MAX_EDGE_AGE_DAYS
+            fresh = age_days <= config.MAX_EDGE_AGE_DAYS
 
             results.append({
                 "ci_id": ci_id,

@@ -1,0 +1,114 @@
+# User Guide
+
+A short walkthrough of how to run the Change Management Context Layer and how to read what it produces. For the design rationale and architecture, see `README.md`.
+
+## 1. Set up
+
+```bash
+pip install -r requirements.txt
+```
+
+Tested on Python 3.13. No external services — all data lives in `data/*.json` and schemas in `schemas/*.json`.
+
+**Windows note:** until the CLI encoding fix lands, prefix commands with `PYTHONIOENCODING=utf-8` so the unicode arrow in the trace doesn't crash on cp1252 terminals:
+
+```bash
+PYTHONIOENCODING=utf-8 python classify.py RFC-9812
+```
+
+## 2. Classify an RFC
+
+```bash
+python classify.py RFC-9812
+```
+
+Replace `RFC-9812` with any of the seven scenario IDs. The CLI prints two sections:
+
+- **AGENT TRACE** — up to five steps, in order: `01_resolve`, `02_traverse`, `03_evaluate`, `04_recall`, `05_act`. Each entry shows which layer was called and what it returned. This is the audit log for the decision.
+- **DECISION** — the final `classification`, `route`, and `reason`. Every word in the reason is grounded in something the trace shows above it.
+
+If the agent short-circuits (kill-switch, emergency) or refuses (low-confidence CMDB edge, stale data, no affected CIs), the trace will be shorter — but a trace is *always* produced.
+
+## 3. The seven scenarios
+
+| RFC | What it tests | Expected outcome |
+|---|---|---|
+| `RFC-9812` | Clean cert rotation on a non-regulated service | `standard` / auto-approve |
+| `RFC-9847` | Same change but on a DORA-regulated service | `normal` / CAB fast track |
+| `RFC-9903` | CMDB edge confidence 0.72 (below threshold) | `refused` |
+| `RFC-9920` | `planned_start_at` falls in the spring patch freeze | `normal` / CAB review |
+| `RFC-9921` | Clean template, but 3-of-5 prior changes hit incidents | `normal` / CAB review |
+| `RFC-9922` | Direct service is non-DORA, but DORA-regulated `payment-api` depends on it | `normal` / CAB review |
+| `RFC-9923` | Submitted before freeze, planned during freeze | `normal` / CAB review |
+
+`RFC-9930` also exists as an emergency declared by the submitter — the agent short-circuits straight to ECAB and never runs the reasoning loop.
+
+## 4. Possible outcomes
+
+| Classification | Route | What it means |
+|---|---|---|
+| `standard` | `auto_approve` | Template matched, no override fired — no human needed |
+| `normal` | `CAB_review` or `CAB_fast_track` | Send to the change board with a pre-brief |
+| `emergency` | `ECAB_review` | Human submitter declared `change_type: "emergency"` — the agent never declares this |
+| `refused` | `CAB_review` | The agent does not have enough confident context to classify safely |
+
+A refusal is **not** an approval. It means "send this to a human; I am not the right tool for this case."
+
+## 5. Run all scenarios as tests
+
+```bash
+pytest -v
+```
+
+13 tests should pass: the 7 scenarios plus emergency short-circuit, kill-switch, schema validation, audit-log emission, trace presence, and the freeze-window fallback.
+
+## 6. The audit log
+
+Every decision — including refusals and emergencies — is appended to `data/audit_log.jsonl`, one JSON object per line. The file is gitignored. Tail it to watch the agent's behavior:
+
+```bash
+tail data/audit_log.jsonl
+```
+
+Each entry records `rfc_id`, `classification`, `route`, `reason`, and a UTC timestamp.
+
+## 7. Tweak the policy
+
+All thresholds live in `agent/config.py`:
+
+| Knob | Default | What it gates |
+|---|---|---|
+| `MIN_EDGE_CONFIDENCE` | `0.80` | Minimum CMDB edge confidence to act on |
+| `MAX_EDGE_AGE_DAYS` | `30` | Maximum staleness for a CMDB edge |
+| `TEMPLATE_MATCH_THRESHOLD` | `0.20` | Minimum template score to auto-approve |
+| `PRECEDENT_INCIDENT_RATE_THRESHOLD` | `0.20` | Prior-incident rate that escalates a clean template |
+| `PRECEDENT_MIN_SAMPLE` | `3` | Minimum prior changes before precedent can gate |
+| `KILL_SWITCH` | `False` | Set to `True` to refuse every classification |
+| `AUDIT_LOG_PATH` | `"data/audit_log.jsonl"` | Set to `None` to disable audit emission |
+
+Lower a threshold and re-run the scenarios to see classifications shift.
+
+## 8. Add your own RFC
+
+Edit `data/rfcs.json`:
+
+```json
+{
+  "id": "RFC-9999",
+  "title": "Your change",
+  "submitter": "you",
+  "submitted_at": "2026-05-04T12:00:00Z",
+  "affected_cis": ["ci-dashboard-tls"],
+  "change_type": null,
+  "proposed_template_id": "TPL-CERT-ROTATE-STD"
+}
+```
+
+Optional fields:
+
+- `description` — free text. Documented as untrusted; the agent never reads it.
+- `planned_start_at` — when the change is planned to execute. The freeze-window rule consults this when present, falling back to `submitted_at`.
+
+Then run `python classify.py RFC-9999`.
+
+If the RFC is malformed (missing required field, wrong type, invalid date), the agent fails loudly at intake — schema validation runs before any reasoning.
